@@ -2,16 +2,33 @@ import streamlit as st
 import fitz  # PyMuPDF
 from gtts import gTTS
 from io import BytesIO
-from openai import OpenAI
+import requests
+import json
 
-# ✅ Load OpenRouter API Key from Streamlit Secrets
-api_key = st.secrets["openrouter"]["api_key"]
-
-# ✅ Initialize OpenAI client with OpenRouter
-client = OpenAI(
-    api_key=api_key,
-    base_url="https://openrouter.ai/api/v1"  # OpenRouter API Base URL
-)
+def get_layman_summary(text):
+    api_key = st.secrets["openrouter"]["api_key"]
+    url = "https://openrouter.ai/api/v1/chat/completions"
+    
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json"
+    }
+    
+    data = {
+        "model": "mistralai/mistral-7b-instruct",
+        "messages": [
+            {"role": "system", "content": "You are a helpful tutor."},
+            {"role": "user", "content": f"Explain the following text in simple language so a 12-year-old can understand:\n\n{text}"}
+        ]
+    }
+    
+    response = requests.post(url, headers=headers, json=data)
+    
+    if response.status_code == 200:
+        result = response.json()
+        return result["choices"][0]["message"]["content"].strip()
+    else:
+        return f"Error: {response.status_code}, {response.text}"
 
 # Function to extract text from PDF
 def extract_text_from_pdf(uploaded_file):
@@ -21,20 +38,6 @@ def extract_text_from_pdf(uploaded_file):
             page = doc.load_page(page_num)
             text += page.get_text()
     return text
-
-# Function to generate layman summary using OpenAI GPT-4
-def get_layman_summary(text):
-    prompt = f"Explain the following text in very simple language so a 12-year-old can understand:\n\n{text}"
-
-    response = client.chat.completions.create(
-        model="gpt-4",
-        messages=[
-            {"role": "system", "content": "You are a helpful tutor."},
-            {"role": "user", "content": prompt}
-        ]
-    )
-    summary = response.choices[0].message.content.strip()
-    return summary
 
 # Function to generate voice narration using gTTS
 def text_to_speech(text, lang='en'):
@@ -51,6 +54,7 @@ uploaded_file = st.file_uploader("Upload your PDF file", type=["pdf"])
 
 if uploaded_file is not None:
     st.success("PDF uploaded successfully! Extracting content...")
+
     pdf_text = extract_text_from_pdf(uploaded_file)
 
     st.write("### Preview of Extracted Text")
@@ -66,4 +70,5 @@ if uploaded_file is not None:
             audio_bytes = text_to_speech(layman_summary)
 
             st.audio(audio_bytes, format='audio/mp3', start_time=0)
+
             st.success("Done! Listen to the explanation above.")

@@ -1,5 +1,7 @@
 PyMuPDF
 streamlit
 gtts
+openai
+
 
 

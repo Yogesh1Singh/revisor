@@ -4,14 +4,14 @@ from gtts import gTTS
 from io import BytesIO
 from openai import OpenAI
 
-# ✅ Fetch API Key from Streamlit Secrets
-openai_api_key = st.secrets["openrouter"]["api_key"]
+# ✅ Load OpenRouter API Key from Streamlit Secrets
+api_key = st.secrets["openrouter"]["api_key"]
 
-# ✅ Debugging: Check if API Key is Loaded
-st.write(f"API Key Length: {len(openai_api_key)}")
-
-# Initialize OpenAI client
-client = OpenAI(api_key=openai_api_key)
+# ✅ Initialize OpenAI client with OpenRouter
+client = OpenAI(
+    api_key=api_key,
+    base_url="https://openrouter.ai/api/v1"  # OpenRouter API Base URL
+)
 
 # Function to extract text from PDF
 def extract_text_from_pdf(uploaded_file):
@@ -33,7 +33,6 @@ def get_layman_summary(text):
             {"role": "user", "content": prompt}
         ]
     )
-
     summary = response.choices[0].message.content.strip()
     return summary
 
@@ -52,7 +51,6 @@ uploaded_file = st.file_uploader("Upload your PDF file", type=["pdf"])
 
 if uploaded_file is not None:
     st.success("PDF uploaded successfully! Extracting content...")
-
     pdf_text = extract_text_from_pdf(uploaded_file)
 
     st.write("### Preview of Extracted Text")
@@ -68,5 +66,4 @@ if uploaded_file is not None:
             audio_bytes = text_to_speech(layman_summary)
 
             st.audio(audio_bytes, format='audio/mp3', start_time=0)
-
             st.success("Done! Listen to the explanation above.")

@@ -4,8 +4,11 @@ from gtts import gTTS
 from io import BytesIO
 from openai import OpenAI
 
-# 🔥 Directly provide your OpenAI API Key here
-openai_api_key = ""  # <<<<<< Replace this with your real OpenAI API key
+# ✅ Fetch API Key from Streamlit Secrets
+openai_api_key = st.secrets["openrouter"]["api_key"]
+
+# ✅ Debugging: Check if API Key is Loaded
+st.write(f"API Key Length: {len(openai_api_key)}")
 
 # Initialize OpenAI client
 client = OpenAI(api_key=openai_api_key)
@@ -67,4 +70,3 @@ if uploaded_file is not None:
             st.audio(audio_bytes, format='audio/mp3', start_time=0)
 
             st.success("Done! Listen to the explanation above.")
-
